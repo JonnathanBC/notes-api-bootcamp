@@ -146,4 +146,7 @@ Un error tipico de consumo de apis son los errores de cors, express nos da una u
 
     const PORT = process.env.PORT || 3001
     Esto necesitaheroku para el usar el puerto que quiera
-    -Luego de todo esto vamos a crear la app de heroku lanzamos el siguiente comando heroku create 
+    -Luego de todo esto vamos a crear la app de heroku lanzamos el siguiente comando heroku create
+    -Luego de todo esto debemos tener pusehado nuestros cambios siempre debemos de trener todo pusheado en la rama main para poder pushear los cambios en heroku y podemos lanzar el sig comnando:
+        git push heroku main
+        Lo que estmos diciendo aqui es que pushee todo lo que tenemos en la rama main y esto hace el deploy
