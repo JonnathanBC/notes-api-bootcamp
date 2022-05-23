@@ -150,3 +150,35 @@ Un error tipico de consumo de apis son los errores de cors, express nos da una u
     -Luego de todo esto debemos tener pusehado nuestros cambios siempre debemos de trener todo pusheado en la rama main para poder pushear los cambios en heroku y podemos lanzar el sig comnando:
         git push heroku main
         Lo que estmos diciendo aqui es que pushee todo lo que tenemos en la rama main y esto hace el deploy
+
+!!! MONGO DB !!!.- Es una BD distribuida basada en documentos y de uso general. Es una BD no SQL, basado en schemas documentos, podemos simular relaciones, no es relacional esta orientada a collection, son dcuemntos poarecidos a JSON pero no son json. TIene una sencilles, es comunmente mas rapida por la misma forma de guardar la informacion y su schema es libre, es decir que los datos que guardamos en estos documentos no son tan rigidos, pero veremos vamos a usar un framework llamado mongoose que nos viene a solucionar esto de los schemas libres nos ayudara a que nuestra BD sea predecible.
+Una cosa util en este aso de conexion es Robo 3t que nos sirve para conecctarnos e incluso crear el db desde ahi.
+PODEMOS enlanzar esto atravez de un codigo que nos proporciona MongoDB para conexion con apps de terceros x ejm :
+    mongodb+srv://jonnathan_bc:<password>@cluster0.lhlwy.mongodb.net/?retryWrites=true&w=majority
+Una vez hecha la conexion podemos lanzar los sig comandos entrando al clouster primario:
+    - db.createCollection('name_db')
+    -use name_db // para que use ese db
+    -db.photos.insert({ //Para insertar datos en forma de json siempre
+      id: 1,
+      name: 'Jonnathan'
+    })
+    -db.photos.find() o db.photos.find({ username: 'jonnathan' }) // Busca algo en una BD. por defecto mongo nos crea id en las "tablas" con algo comunmente conocido como ObjectId que es una id unica que crea mongo para cada documento, es aleatoria una parte y la otra parte tiene la infor en que moneto se creo la collection.(_id)
+    -db.photos.update({ user: 'jonnthan' }, {
+        name: 'Israel'
+    })
+
+Cabe recalcar, mongoDB inserta sin importar asi sea todo el rato el mismo registro, porque como dijimos no tiene un schema especifico, osea si insertamos una edad en numero y en otro un string etc etc, puede mezclar los tipos de datos o puede mezclar o crear varios schemas de una misma tabla. Por esto es mas rapida por la forma de como guarda la informacion por su flexibilidad pero tambien con lleva tal vez a nivel de backend podemos validar las collection de como queremos que sea validar etc etc pero esto a nivel de backend no de db mongo es flexible y sera siempre asi.
+
+Otro incoveniente que nos podemos encontrar es al momento de actualizar un registro si hjacemos esto:
+-db.photos.update({ user: 'jonnthan' }, {
+    name: 'Israel'
+})
+Esta mal esta incorrecta porque estamos machacando el objeto, es decir, me actualiza solo el nombre y los otros campos que existan los eliminar.
+Para actualizar tenemos que utilizar un operador especial llamado $set  asi si guardaria el objeto anterior y lo nueva que se esta cambiando:
+db.photos.update({ user: 'jonnathan' }, {
+    $set: {
+        name: 'Israel'
+    }
+})
+
+Podemos reestringir ip que se puedan conectar a estos db.
