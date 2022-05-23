@@ -87,4 +87,48 @@ app.post('/api/notes', (request, response) => {
     response.json(newNote)
 })
 
-4)
+!!! LINTERS !!! Nos sirve para code style, nos permite a mejorar la lintado de nuestro codigo el linter mas extendido es eslint lo vamos a instalar con -D porque es una dependencia de desarrolo.
+ 1) npm i eslint -D => Importante siempre que podamoseliminar el caret de los paquetes.
+ 2) Podemos ejecutar un binario que nos va a permitir iniciar el slint con:
+    ./node_modules/.bin/eslint --init, pero una buena practica siempre es crear un script por ejm:
+    "lint": "eslint .", => npm run lint
+
+    Una vez respodido las preguntas lanzando el binario o el script nos aparece un archivo llamado .eslintrc.jsy aqui estara toda la configuracion del linter y para que nos salgan los errores debemos instalar en vsc una extension llamada eslint que esto lo que hace es leer ese archivo de configuracion. En ese archivo de configuracion vemos que nos ha colocado en esta opcion:
+    module.exports = {
+    'env': {
+        'browser': true,
+    Nos ha colocado un browser true esto lo que hace es que no nos ayuda a detectar las variables de entorno con el process => process.env.PORT, debemos de agregarle a esa configuracion la opcion de 'node': con el valor true ejm:
+    module.exports = {
+    'env': {
+        'browser': true,
+        'node': true
+    }
+    Con esto le estamos diciendo que el entorno de desarrollo es node.
+
+3) Otra opcion de linter seria standard... lo podemos instalar con npm i standard -D, esta ya viene con una configuracion especifica directa para cada lenguaje de programacion e incluso viene ya por defecto de trabajar sin semicolumns, esta basado en eslint.
+Podemos en nuestro package.json colocar la sig opcion que es  otra forma de configurar el linter
+},
+"eslintConfig": {
+    "extends": "./node_modules/standard/eslintrc.json"
+}
+
+!!! MIDDLEWARE !!!.-Es una funcion que intercepta una peticion que esta pasando por mi api.
+app.use((request, response, next) = {
+    ...codigo
+    next()
+})
+Es decir, va leyendo la app de arriba ha abajo y va entrando en los path que le colocquemos si coincide con eso pues nos devolvera lo que contiene eso, le tenemos que psar el next porque si no no nos devuelve nada, el next significa que si no coincide con la ruta pasa al sig. Puede ser muy util para errores 404
+
+app.use((request, response) => {
+  response.status(404).json({
+    error: 'Not found'
+  })
+})
+
+Un error tipico de consumo de apis son los errores de cors, express nos da una utilidad propia para evitar estos errores de cors, es facil de solucionar cuando tenemos el backend a disposicion. Cuando estas en origines distintos podemos usar imagenes, cdn de js, fuentes, pero en informacion con fetch con request no devuelve la informacion lo hacemos de la sig manera, existe un middleware en express para solucionar este error lo hacemos de la sig manera:
+
+1)Instalcion de cors de express npm i cors -E , este -E lo que estamos diciendo es que nos instale la version exacta
+2) En nuestro index lo que solo dedemos hacer es que lo use ejm:
+
+    const cors = require('cors')
+    app.use(cors())
