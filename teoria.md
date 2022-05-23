@@ -132,3 +132,18 @@ Un error tipico de consumo de apis son los errores de cors, express nos da una u
 
     const cors = require('cors')
     app.use(cors())
+
+
+!!! DEPLOY IN HEROKU !!!
+1)Debemos de crear el repositorio si no tenemos de nuestro backend.
+2)En nuestro proyecto debemos crear en la raiz un archivo llamada Procfile con las sig congiguraciones:
+    web: npm start
+
+3)Crear la app en heroku en los sig pasos:
+    -Instalar el CLI de heroku.
+    -Crear una cuenta.
+    -En nuestro index debemos de modificar un poco el codigo especificamente en el puerto, porque en heroku no le podemos decir el puerto porque el lo hace automaticamente, para estoel puerto lo utiliza d euna variable de entrono llamado port 
+
+    const PORT = process.env.PORT || 3001
+    Esto necesitaheroku para el usar el puerto que quiera
+    -Luego de todo esto vamos a crear la app de heroku lanzamos el siguiente comando heroku create 
