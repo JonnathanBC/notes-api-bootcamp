@@ -154,7 +154,7 @@ Un error tipico de consumo de apis son los errores de cors, express nos da una u
 !!! MONGO DB !!!.- Es una BD distribuida basada en documentos y de uso general. Es una BD no SQL, basado en schemas documentos, podemos simular relaciones, no es relacional esta orientada a collection, son dcuemntos poarecidos a JSON pero no son json. TIene una sencilles, es comunmente mas rapida por la misma forma de guardar la informacion y su schema es libre, es decir que los datos que guardamos en estos documentos no son tan rigidos, pero veremos vamos a usar un framework llamado mongoose que nos viene a solucionar esto de los schemas libres nos ayudara a que nuestra BD sea predecible.
 Una cosa util en este aso de conexion es Robo 3t que nos sirve para conecctarnos e incluso crear el db desde ahi.
 PODEMOS enlanzar esto atravez de un codigo que nos proporciona MongoDB para conexion con apps de terceros x ejm :
-    mongodb+srv://jonnathan_bc:<password>@cluster0.lhlwy.mongodb.net/?retryWrites=true&w=majority
+    mongodb+srv://jonnathan_bc:<password>@cluster0.lhlwy.mongodb.net/myFirstDB?retryWrites=true&w=majority
 Una vez hecha la conexion podemos lanzar los sig comandos entrando al clouster primario:
     - db.createCollection('name_db')
     -use name_db // para que use ese db
@@ -182,3 +182,113 @@ db.photos.update({ user: 'jonnathan' }, {
 })
 
 Podemos reestringir ip que se puedan conectar a estos db.
+
+!!! MONGOOSE !!!.-  Existe un driver de mongoDB que funcoina igual que Robo3t que funciona a muy bajo nivel.
+Existen otras alternativas que es mongoose que es la herramienta mas utilizada para mongoDB tiene un monton de mejoras y que envuelve mongoDB Driver para que no tengamos que preocuparnos de muchas cosas problematicas como hemos visto antes.
+Mongioose es un ObjectModel porque lo que hace es crear todo tipo de validacion, logica, va a crear la posibilidad de crear schemas.
+
+//Installation
+npm i mongoose
+
+//Uso recomnedable crear un archivo separado donde este la logica de la conexion con mongoDB
+mongo.js
+const mongoose = require('mongoose')
+const connectionString = 'mongodb+srv://jonnathan_bc:password@cluster0.lhlwy.mongodb.net/db_name?retryWrites=true&w=majority'
+
+// Conexion a mongodb.
+mongoose.connect(connectionString, {
+  useNewUrlParser: true, //Estas opciones son para mongoose version 5 en mi caso buscar domentacion porque puede ser 
+  useUnifiedTopology: true, //Que se hayan eliminado en versiones mas actuales.
+  useFindAndModify: false,
+  useCreateIndex: true
+})
+  .then(() => {
+    console.log('Database is conected')
+  }).catch(error => {
+    console.error(error)
+  })
+
+  //Creacion del schema que queremos que tenga en este caso note
+  const noteSchema = new Schema({
+    content: String,
+    date: Date,
+    important: Boolean
+  })
+
+// creacion modelo.- La creacion del modelo debe de ser siemore en mayuscula la primera letra y en sinfular porque por defecto mongo convierte ese modelo en minusculas y plural Note => notes
+const Note = model('Note', noteSchema)
+
+//Creacion de nuestra primera nota a trevex de una instancia a note.
+const note = new Note({
+  content: 'MongoDB es incrible midu',
+  date: new Date(),
+  important: true
+})
+
+note.save()
+  .then(result => {
+    console.log(result)
+    mongoose.connection.close() //Como buena practica siempre debemos de cerrar las conecciones.
+  }).catch(error => {
+    console.error(error)
+  })
+
+Como hemos dichos estos schemas son a nivel de apliczcion no a nivel de DB, osea que el schema se hace dentro de la applicacion porque no podemos cambiar la flexibilidad de mongo db.
+
+INTEGRACION CON NUESTRO BACKEND.- Una vz que tenemos todo esto podemos en nuetsro index conectar el backendo con el DB ejm
+
+-require('./mongo') //ponemos la conexion requiriendola al orincipio de nuestro index al inicio
+-const Note = require('./models/Note') //importamos el modeli
+
+-Podemos empezar a modificar nuestras rutas para que nos traiga la informacion que tenemos ennuestro DB por ejm
+app.get('/api/notes', (request, response) => {
+  Note.find({}).then(notes => {
+    response.json(notes)
+  })
+})
+
+Podemos nosotros rasnformar el toJSON que nos devuelve por que mongo db nos crea dos cmpos por defecto el _id y el __v.
+Entonces en el schema podemos nosotros "mutar" este toJSON para que nos devuelva o quite informacion que queremos en este caso lo que vamos ha hacer es que el id tenga el valor del _id y quitar el __v. Pero ojo no quita del database si no solo de la vista que nosotros queremos para manejo de informacion x ejm
+
+Note.js
+const { Schema, model } = require('mongoose')
+
+const noteSchema = new Schema({
+    ...code
+})
+
+noteSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id //Con esto el id tiene le valor de _id
+    delete returnedObject._id //Con esto eliminamos los _id
+    delete returnedObject.__v //Con esto eliminamos los __v
+  }
+})
+
+Vamos ahora a colocar las conexiones de nuestro db en un archivo .env para poder colocar ahi las credenciales y que estas sean invisibles a los users, pero ojo siempre debemos de ignorar el .env en el gitignore.
+Pero para que lo lea debemos de instyalar dotenv npm i dotenv una vez instalado debemos de requerirlo en nuestro index pero al inicio en la linea 1 el metodo config() ejm
+index.js
+require('dotenv').config() lo que hace y el motivo de colocarlo primero es que primero vera esto y lo que hace es leer si tenemos un archivo .env y colocara las variables de entorno que tengamos en este archivo.
+Importante siempre ignorar este archivo en el gitignore.
+
+El orden de los middlewares son siempre imprtantes porque va en orden leyendo de arriba hacia abajo.
+Los middlewares en donde por ejm al next() si le pasamos el parametro del error por defecto el buscara el un middleware que tenga como primer parametro un error ejm
+
+app.post('mkml', (request, response, next) => {
+  ...code
+  .then(() => {})
+  .catch(error => next(error)) //Esto busca lo de abajo porque  tiene ese middleware con el primer parametro error.
+})
+
+app.use((error, request, response, next) => {
+  console.error(error)
+  console.error(error.name)
+
+  if (error.name === 'CastError') {
+    response.status(400).send({ error: 'id used is malformed' })
+  } else {
+    response.status(500).end()
+  }
+})
+
+Puede haber fugas de memoria en mongoose por eso es buena oractica siempre cerrar las conexiones.

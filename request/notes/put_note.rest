@@ -1,0 +1,7 @@
+PUT http://localhost:3001/api/notes/628c3bccc042b22620d172b9
+Content-Type: application/json
+
+{
+    "content": "Suscribete a @midudev y dale like es gratis",
+    "important": true
+}
