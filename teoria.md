@@ -292,3 +292,27 @@ app.use((error, request, response, next) => {
 })
 
 Puede haber fugas de memoria en mongoose por eso es buena oractica siempre cerrar las conexiones.
+
+!!! TESTING DESDE 0 CON JEST !!!.- Los test siemore deben ser predecibles siempre debemos hacer que nuestro test falle para verificar la funcionalidad de nuetsro test y este sea correcto.
+Jest estaba mas para navegador para cliente pero lo han podido solucionar ahora es para backend tambien.
+
+Installation
+npm i jest --save-dev o npm i jest -D como desarrolo lo uno es igual que el otro.
+
+En windows hay veces que falla. es decir que si tenemos espacion en nuestras carpetas puede no funcionar correctamente.
+Como dijimos jest esta por defecto esta pensado para trabajar en el cliente, esto lo que hace es simular cosas del DOM y nosotros esas cosas no las necesitamos y de hecho pueden ser problematicas.
+Para solucionar esto en nuestro package.json podemos agregar una configuracion para jest y lo que etsmoa diciendo con esta configuracion  que el entorno en donde vamos a ejecutar nuestros test es node ejm:
+
+...code
+},
+"jest": {
+Para que nuestro linter no nos de errores en el codigo que no esxiste etc etc, podemos realizar en el package.json en el aprtado de eslintConfig lo sig una key env con el valor de jest que sea true, con esto le decimos que el el entorno de test es jest por lo tanto quita los errores de lintado y podemos usar jest en node.
+
+"eslintConfig"
+: {
+  "extensds": "...code",
+  "env": {
+    "jest": true
+  }
+}
+Por defecto jest lo que hace es buscar los archivos que tiene .test.js y los ejecuta siempre y para ejecutar podemos crear un script "test": "jest --verbose" --verbose lo que hace es decrile que me de toda la informacion posble.
