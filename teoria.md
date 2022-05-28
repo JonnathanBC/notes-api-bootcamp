@@ -292,3 +292,103 @@ app.use((error, request, response, next) => {
 })
 
 Puede haber fugas de memoria en mongoose por eso es buena oractica siempre cerrar las conexiones.
+
+!!! TESTING DESDE 0 CON JEST !!!.- Los test siemore deben ser predecibles siempre debemos hacer que nuestro test falle para verificar la funcionalidad de nuetsro test y este sea correcto.
+Jest estaba mas para navegador para cliente pero lo han podido solucionar ahora es para backend tambien.
+
+Installation
+npm i jest --save-dev o npm i jest -D como desarrolo lo uno es igual que el otro.
+
+En windows hay veces que falla. es decir que si tenemos espacion en nuestras carpetas puede no funcionar correctamente.
+Como dijimos jest esta por defecto esta pensado para trabajar en el cliente, esto lo que hace es simular cosas del DOM y nosotros esas cosas no las necesitamos y de hecho pueden ser problematicas.
+Para solucionar esto en nuestro package.json podemos agregar una configuracion para jest y lo que etsmoa diciendo con esta configuracion  que el entorno en donde vamos a ejecutar nuestros test es node ejm:
+
+...code
+},
+"jest": {
+Para que nuestro linter no nos de errores en el codigo que no esxiste etc etc, podemos realizar en el package.json en el aprtado de eslintConfig lo sig una key env con el valor de jest que sea true, con esto le decimos que el el entorno de test es jest por lo tanto quita los errores de lintado y podemos usar jest en node.
+
+"eslintConfig"
+: {
+  "extensds": "...code",
+  "env": {
+    "jest": true
+  }
+}
+Por defecto jest lo que hace es buscar los archivos que tiene .test.js y los ejecuta siempre y para ejecutar podemos crear un script "test": "jest --verbose" --verbose lo que hace es decrile que me de toda la informacion posble.
+
+!!! TESTING DEL BACKEND !!!.- Antes de empezar con el testing, debemos de nosotros indicar el entorno de donde estamos desarrollando, en node hay como un reggla donde podemos tener un entorno de desarrollo y produccion.
+EN node podemos vamos a modificar un poco nuestros scripts colocando los diff entornos para cada script ejm:
+
+//Antes
+"scripts": {
+  "dev": "nodemon index.js",
+  "lint": "standard .",
+  "start": "node index.js",
+  "test": "jest --verbose"
+},
+
+//Ahora
+"scripts": {
+  "dev": "NODE_ENV=development nodemon index.js",
+  "lint": "npm run lint",
+  "start": "NODE_ENV=production node index.js",
+  "test": "NODE_ENV=test jest --verbose"
+},
+
+PEro esto no funciona bien en windows por lo que debemos de colocar un prefijo antes de cada contenido ejm:
+ 1)Vamos a instalar una dependencia llamada cross env npm i cross-env, esto me va a permitir justamente es ue las variables de entorno funcionen bien de mejor manera.
+
+ 2)En nuestros scripts como dijimos vamos a anteponer un prefijo cross-env en donde vamos a usar las varianles de entorno dentro de cada comando ejm:
+
+ "scripts": {
+  "dev": "cross-env NODE_ENV=development nodemon index.js",
+  "lint": "npm run lint",
+  "start": "cross-env NODE_ENV=production node index.js",
+  "test": "cross-env NODE_ENV=test jest --verbose"
+},
+
+Como queremos testear nuestra app tira de una BD, no es una buena practica lo que vamos ha hacer, vamos a tirar de una b BD diff para este test entonces seguimos lo ssig pasos
+ 1)Creamos una variable de entorno llamada MONGO_DB_URI_TEST: con el valor de las connection string solo que le cambiamos el nombre del DB  para que cree otra poude ser notes-app-test entonces tirara de ahi nuestros test de ese DB.
+
+ 2)Luego en donde tenemos la conecxon a la BD en este caso el archivo mongo.js vamos a modificar el apartado donde estamos haciendo la conexion directa ejm 
+
+ //Antes
+ const connectionString = process.env.MONGO_DB_URI
+
+ //MOdificado
+ const { MONGO_DB_URI, MONGO_DB_URI_TEST, NODE_ENV } = process.env
+  const connectionString = NODE_ENV === 'test'
+   ? MONGO_DB_URI_TEST
+   : MONGO_DB_URI 
+
+Vamos a hacer test de integracion, osea, que integra mas de una cosa porque no es solo un metodo en concreto sino que vamos a testear nuestras endopoint de nuestra app, por lo cual debemos de tenr un forma facil de acceder a ellos como lo vamos ha hacer con esta herramienta supertes que es una biblioteca que nos va a permitir probar facilmente servidores http:
+ 1) npm i supertest -D instalamos como deopendencia de desarrollo.
+ 2)Luego donde vamos a utilizar debemos de importar supertes, luego importamos la app osea desde el index.js de nuestra app el app primcipal debemos d eimportarlo y luego con el supertes lo que vamos a hacer es asiganarle ese valor ejm 
+
+  const supertest = require('supertest') import supertes
+  const app = require('../index') import app siempre debemos asegurarnos estar exportando la app en el index.js.
+  const api = supertest(app) Asignacion al suertest nuestra app
+
+ 3) Luego ya solo debemos de empezar a crear nuestros test como vemos en este ejm creamos un test de nuestra api de notas. Ojo los test de api son siempre asincronos siempre
+
+  const supertest = require('supertest')
+  const app = require('../index')
+  const api = supertest(app) 
+
+ test('notes are returned as json', async () => {
+    await api
+      .get('/api/notes')
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+  })
+Nota Siempre el conten-type debemos pasarle en una regex porque si le pasmos como string peta porque no sabe si le va allegar el charset.
+Tenemos varios scripts que podemos utilizar para lanzar los test x ejm:
+
+- "test": "cross-env NODE_ENV=test jest --verbose --silent", lanza el comando
+- "test:watch": "npm run test -- --watch" reutilizacion del test + -- --watch que es para que siempre este a la escucha de que cambie el documento y se vuelva a lanzar automaticamente.
+
+-"test:watch": "npm run test -- --watch test/notes.test.js" para lanzar un test en especifico
+- PAra consola npm run test -- -t "name_test".
+
+Generacion de ids random en base a los ids de un json.
