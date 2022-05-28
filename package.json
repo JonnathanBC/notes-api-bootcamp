@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "lint": "standard .",
-    "start": "node index.js",
-    "test": "jest --verbose"
+    "dev": "cross-env NODE_ENV=development nodemon index.js",
+    "lint": "npm run lint",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "test": "cross-env NODE_ENV=test jest --silent",
+    "test:watch": "npm run test -- --watch"
   },
   "keywords": [],
   "author": "",
@@ -15,19 +16,21 @@
   "devDependencies": {
     "jest": "26.6.3",
     "nodemon": "2.0.7",
-    "standard": "16.0.3"
+    "standard": "16.0.3",
+    "supertest": "6.2.3"
   },
   "dependencies": {
-    "@sentry/node": "^6.19.7",
-    "@sentry/tracing": "^6.19.7",
+    "@sentry/node": "6.19.7",
+    "@sentry/tracing": "6.19.7",
     "cors": "2.8.5",
+    "cross-env": "7.0.3",
     "dotenv": "16.0.1",
     "express": "4.17.1",
     "mongoose": "5.11.18"
   },
   "eslintConfig": {
     "extends": "./node_modules/standard/eslintrc.json",
-    "env":  {
+    "env": {
       "jest": true
     }
   },

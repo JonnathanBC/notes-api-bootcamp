@@ -37,10 +37,15 @@ app.get('/', (request, response) => {
   response.send('<h1>Hello world!!!</h1>')
 })
 
-app.get('/api/notes', (request, response) => {
+app.get('/api/notes', async (request, response) => {
+  /* Con promesas
   Note.find({}).then(notes => {
     response.json(notes)
   })
+  */
+  // Asyncrono
+  const notes = await Note.find({})
+  response.json(notes)
 })
 
 app.get('/api/notes/:id', (request, response, next) => {
@@ -69,15 +74,17 @@ app.put('/api/notes/:id', (request, response, next) => {
     }).catch(error => next(error))
 })
 
-app.delete('/api/notes/:id', (request, response, next) => {
+app.delete('/api/notes/:id', async (request, response, next) => {
   const { id } = request.params
+  await Note.findByIdAndDelete(id)
+  response.status(204).end()
 
-  Note.findByIdAndDelete(id)
-    .then(() => response.status(204).end())
-    .catch(error => next(error))
+  // Note.findByIdAndDelete(id)
+  //  .then(() => response.status(204).end())
+  //  .catch(error => next(error))
 })
 
-app.post('/api/notes', (request, response) => {
+app.post('/api/notes', async (request, response, next) => {
   const note = request.body
 
   if (!note.content) {
@@ -85,9 +92,6 @@ app.post('/api/notes', (request, response) => {
       error: 'required "content" field is missing'
     })
   }
-
-  // const ids = notes.map(note => note.id)
-  // const maxId = Math.max(...ids)
 
   // Creamos la nota en base(instancia) al modelo
   const newNote = new Note({
@@ -97,9 +101,16 @@ app.post('/api/notes', (request, response) => {
   })
 
   // Añadimos la nueva con el save() de mongoose
-  newNote.save().then(savedNote => {
-    response.json(savedNote)
-  })
+  // newNote.save().then(savedNote => {
+  //   response.json(savedNote)
+  // }).catch(err => next(err))
+
+  try {
+    const savedNotes = await newNote.save()
+    response.json(savedNotes)
+  } catch (error) {
+    next(error)
+  }
 })
 
 app.use(notFound)
@@ -109,7 +120,9 @@ app.use(Sentry.Handlers.errorHandler())
 // Entrara en este middleware siempre y cuando estemos pasando los errores en el next() conargumento error next(error)
 app.use(handleErrors)
 
-const PORT = process.env.PORT
-app.listen(PORT, () => {
-  console.log(`Server is running in port ${PORT}`)
+const PORT = process.env.PORT || 3001
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })
+
+module.exports = { app, server }
