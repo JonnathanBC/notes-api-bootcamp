@@ -1,5 +1,6 @@
 const notesRouter = require('express').Router()
 const Note = require('../models/Note')
+const User = require('../models/User')
 
 notesRouter.get('/', async (request, response) => {
   /* Con promesas
@@ -8,7 +9,10 @@ notesRouter.get('/', async (request, response) => {
     })
     */
   // Asyncrono
-  const notes = await Note.find({})
+  const notes = await Note.find({}).populate('user', {
+    username: 1,
+    name: 1
+  })
   response.json(notes)
 })
 
@@ -49,9 +53,10 @@ notesRouter.delete('/:id', async (request, response, next) => {
 })
 
 notesRouter.post('/', async (request, response, next) => {
-  const note = request.body
+  const { content, important = false, userId } = request.body
+  const user = await User.findById(userId)
 
-  if (!note.content) {
+  if (!content) {
     response.status(400).json({
       error: 'required "content" field is missing'
     })
@@ -59,9 +64,10 @@ notesRouter.post('/', async (request, response, next) => {
 
   // Creamos la nota en base(instancia) al modelo
   const newNote = new Note({
-    content: note.content,
+    content: content,
     date: new Date(),
-    important: note.important || false
+    important,
+    user: user._id
   })
 
   // Añadimos la nueva con el save() de mongoose
@@ -70,8 +76,12 @@ notesRouter.post('/', async (request, response, next) => {
   // }).catch(err => next(err))
 
   try {
-    const savedNotes = await newNote.save()
-    response.json(savedNotes)
+    const savedNote = await newNote.save()
+
+    user.notes = user.notes.concat(savedNote._id)
+    await user.save()
+
+    response.json(savedNote)
   } catch (error) {
     next(error)
   }

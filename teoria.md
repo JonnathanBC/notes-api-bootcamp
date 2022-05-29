@@ -476,3 +476,39 @@ const userSchema = new Schema({
 //Luego debemos usarlo como plugin con el schema que creamos en este caso el userSchema.
 userSchema.plugin(uniqueValidator)
 Revisar la documentacion de unique validator que tenemos varios tipos de uso.
+
+!!! JOIN !!!.- Esto se denomina a una relacion entre una tabla y otra, hablando DB relaciones, en este caso en mongoDB lo tenemos que hacer a mano, pero es muy complejo hacerlo se llama Agregacion, existe en mongoose un concepto llamado en Populate es un metodo que lo que hace es utlizar las referencia creadas en los schemas, lo que hace es recuperar la informacion y popularla(rellenar) la informacion del usuario dondoe la necesitamos. ejm:
+
+//Aqui le agragamos el populate en la llamada en get, aqui me traera la informacion completa de las notas.
+usersRouter.get('/', async (request, response) => {
+  const users = await User.find({}).populate('notes')
+  response.json(users)
+})
+
+//Lo que hace ese populate es tirar del modelo del usuario, pero busca si tenemos una referencia si la tiene pues me envia los datos de la referencia en este caso la referencia es ref: 'Note'.
+const userSchema = new Schema({
+  username: {
+    unique: true,
+    type: String
+  },
+  name: String,
+  passwordHash: String,
+  notes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Note'
+  }]
+})
+Aunque podemos nosotros en mongoose tambein escoger los campos que queremos que se visualicen, en este caso estamos trayendo la collection de notas pero por default me trae todos los campos que existen en ese documento, por ejm:
+
+usersRouter.get('/', async (request, response) => {
+  const users = await User.find({}).populate('notes', {
+    content: 1,
+    date: 1,
+    _id: 0
+  })
+  response.json(users)
+})
+Como vemos en el ejm le pasamos el nombre del campo con el valor de 1 cuando queremos que nos muestre y le podemos pasar 0 si queremos que no muestre esa informacion. Este populate recibe dos parametros el nombre del campo de referencia y como segundo parametro un objeto donde como vimos le podemos pasar los campos que queremos que se muestren o no, asi podemos tener el control en nuestros schemas siempre y como buena practica.
+
+Basicamente no es exactamente un JOIN, porque un JOIN es transaccional, lo que quiere decir esto es que esa operacion bloquea las tablas no permite que haya escrituras en las tablas, porque puede ser que cuando hacemos el JOIN puede ser que la informacion que nos traemos de esa tabala no es exactamente la que hay en la tabla.
+En este caso lo que esta haciendo es algo no transaccional mongoose porque mientras esta haciendo estas operaciones no esta bloqueando que se esten escribiendo en los documentos, lo que sig es que cuando hemos recuperando unas notas por ejm, puede ser que mientas estaba ocurriendo alguien borro esa nota y yo la tenga aunque ya no existe. Entonces esto lo que hace mongoose no es transacional porque no esta bloqueando la escrituras de la tabla entonces mientras sucede la peticio pueden estar sucediendo otras.
