@@ -27,7 +27,8 @@
     "cross-env": "7.0.3",
     "dotenv": "16.0.1",
     "express": "4.17.1",
-    "mongoose": "5.11.18"
+    "mongoose": "5.11.18",
+    "mongoose-unique-validator": "2.0.3"
   },
   "eslintConfig": {
     "extends": "./node_modules/standard/eslintrc.json",

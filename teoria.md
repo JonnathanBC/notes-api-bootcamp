@@ -445,4 +445,34 @@ usersRouter.post('/', async (request, response) => {
   const savedUser = await user.save()
   response.json(savedUser)
 })
-module.exports = usersRouter 
+module.exports = usersRouter
+
+!!! Testing Drive Development (TDD) !!!.- Es una forma de desarrollo en donde primero hacemos el test luego escribimos el código. En base seria que nos apoyamos en el test primero y no en la funcionalidad en si.
+Es una buena practica.
+
+En mongoose existe una iibreria llamada mongoose unique validator !!! Nos permite validar los campos que nosotros queremos que sean requeridos, unicos etc etc. Las validaciones lo hacemos en el schema ya que desde aqui ya parte un shcema especifico de como estamos creando las collection
+
+install
+npm i --save mongoose-unique-validator
+
+//USO
+//requerimos
+const uniqueValidator = require('mongoose-unique-validator')
+
+//Modelo validacion, aqui como vemos al campo le pasamos un objeto y colocamos unique: true para que sea unico y le pasamos el type: tipo de dato que require en este caso String al campo username
+const userSchema = new Schema({
+  username: {
+    unique: true,
+    type: String
+  },
+  name: String,
+  passwordHash: String,
+  notes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Note'
+  }]
+})
+
+//Luego debemos usarlo como plugin con el schema que creamos en este caso el userSchema.
+userSchema.plugin(uniqueValidator)
+Revisar la documentacion de unique validator que tenemos varios tipos de uso.
