@@ -10,6 +10,7 @@ const cors = require('cors')
 const Note = require('./models/Note')
 const notFound = require('./middlewares/notFound.js')
 const handleErrors = require('./middlewares/handleErrors.js')
+const usersRouter = require('./controllers/users')
 
 app.use(cors())
 app.use(express.json())
@@ -112,6 +113,8 @@ app.post('/api/notes', async (request, response, next) => {
     next(error)
   }
 })
+
+app.use('/api/users', usersRouter)
 
 app.use(notFound)
 

@@ -1,25 +1,27 @@
 const { model, Schema } = require('mongoose')
 
 // creacion del schema
-const noteSchema = new Schema({
-  content: String,
-  date: Date,
-  important: Boolean,
-  user: {
+const userSchema = new Schema({
+  username: String,
+  name: String,
+  passwordHash: String,
+  notes: [{
     type: Schema.Types.ObjectId,
-    ref: 'User'
-  }
+    ref: 'Note'
+  }]
 })
 
-noteSchema.set('toJSON', {
+userSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id
     delete returnedObject._id
     delete returnedObject.__v
+
+    delete returnedObject.passwordHash
   }
 })
 
 // creacion modelo
-const Note = model('Note', noteSchema)
+const User = model('User', userSchema)
 
-module.exports = Note
+module.exports = User

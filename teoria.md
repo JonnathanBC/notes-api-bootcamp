@@ -392,3 +392,57 @@ Tenemos varios scripts que podemos utilizar para lanzar los test x ejm:
 - PAra consola npm run test -- -t "name_test".
 
 Generacion de ids random en base a los ids de un json.
+
+!!! Controladores(Controllers) !!!.- Con los controladores vamos a ser capaces de crear endpoints que vamos a tener disponibles en nuestra app hecha con express fuera del index ejm:
+
+1) Debemos en nuestro index crear el middleware que va a hacer uso de nuestro controller(router)
+  index.js 
+  app.use('/api/users', userRouter)
+
+2)Creamos una carpeta llamada controllers si no la tenemos con un archivo llamado userRouter controllers/userRouter
+
+3) Debemos de importar el router de express
+const userRouter = require('express').Router() //El Router() es una clase la cual nos va a permitir crear u router de forma separada a lo que tenemos en el indice y utilizarlo despues.
+const User = require('./models/User') 
+
+// Aqui dentro podemos crear nuestras endpoints como hicimos con las notas asi quedara mas limpio nuestro index
+Por ejm
+userRouter.post('/', async () => {
+
+})
+
+module.exports = userRouter
+Ojo aqui el nombre de las rutas siempre apuntan a / o /:id porque esto es relativo al middleware creado en el index  => app.use('/api/users', userRouter) este porque aqui ya le estamos indicando que todo esto va a ir al api/users siempre.
+
+Una de las mejores forma de encriptar nuestras password apara segutidad nuestra y de nuestros usuarios es con bcrypt ya que no permite crear passwordHash en una sola direccion como si fuese bidirecccional al final si tenemos el hash podemos volver a desencriptar y tiene varios metodos que en el desarrolo nos pueden ser muy utiles en el desarrollo, este metodo de encrptacion tiene que ser o es muy recomnedable que sea de forma asincrona, porque esta operacion de hashear una pass suele ser muy grande, si nosotros bloqueamos el thread de node lo que puede suceder es que lleguen peticiones se va parando el thread esperando que crees el hash y que cada vez vaya mas lento el servidor por eso es recomnedable y buenisiam practica hacerlo asincrono esta funcionalidad bcrypt ya viene con metodos asincronos(bcrypt.hash) y sincronos(bcrypt.hashSync) que podemos usarlo.
+
+1-npm i bcrypt
+2-importacion donde lo vayamos a usar en este caso es el controlador del user
+ const bcrypt = require('bcrypt')
+
+3-Este recibe dos parametros el password que vamos a hashear y como segundo parametro saltOfRounds que esto no es mas que la complejidad algoritmica que queremos que se hashe la password, cuanta mas complejidad tarda mas pero mas segura sera como buena practica y el valor que se suele usar es ser siempre 10.
+
+const saltRounds = 10
+const passwordHash = await bcrypt.hash(password, saltRounds)
+
+
+const bcrypt = require('bcrypt')
+const usersRouter = require('express').Router()
+const User = require('../models/User')
+
+usersRouter.post('/', async (request, response) => {
+  const { body } = request
+  const { username, name, password } = body
+
+  const saltRounds = 10
+  const passwordHash = await bcrypt.hash(password, saltRounds)
+  const user = new User({
+    username,
+    name,
+    passwordHash
+  })
+
+  const savedUser = await user.save()
+  response.json(savedUser)
+})
+module.exports = usersRouter 
