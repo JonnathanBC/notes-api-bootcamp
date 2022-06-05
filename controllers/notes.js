@@ -1,6 +1,7 @@
 const notesRouter = require('express').Router()
 const Note = require('../models/Note')
 const User = require('../models/User')
+const userExtractor = require('../middlewares/userExtractor')
 
 notesRouter.get('/', async (request, response) => {
   /* Con promesas
@@ -25,7 +26,7 @@ notesRouter.get('/:id', (request, response, next) => {
   }).catch(error => next(error))
 })
 
-notesRouter.put('/:id', (request, response, next) => {
+notesRouter.put('/:id', userExtractor, (request, response, next) => {
   const { id } = request.params
   const note = request.body
 
@@ -42,7 +43,7 @@ notesRouter.put('/:id', (request, response, next) => {
     }).catch(error => next(error))
 })
 
-notesRouter.delete('/:id', async (request, response, next) => {
+notesRouter.delete('/:id', userExtractor, async (request, response, next) => {
   const { id } = request.params
   await Note.findByIdAndDelete(id)
   response.status(204).end()
@@ -52,8 +53,11 @@ notesRouter.delete('/:id', async (request, response, next) => {
   //  .catch(error => next(error))
 })
 
-notesRouter.post('/', async (request, response, next) => {
-  const { content, important = false, userId } = request.body
+notesRouter.post('/', userExtractor, async (request, response, next) => {
+  const { content, important = false } = request.body
+
+  // get the userId from the token, saved in the middleware
+  const { userId } = request
   const user = await User.findById(userId)
 
   if (!content) {

@@ -512,3 +512,137 @@ Como vemos en el ejm le pasamos el nombre del campo con el valor de 1 cuando que
 
 Basicamente no es exactamente un JOIN, porque un JOIN es transaccional, lo que quiere decir esto es que esa operacion bloquea las tablas no permite que haya escrituras en las tablas, porque puede ser que cuando hacemos el JOIN puede ser que la informacion que nos traemos de esa tabala no es exactamente la que hay en la tabla.
 En este caso lo que esta haciendo es algo no transaccional mongoose porque mientras esta haciendo estas operaciones no esta bloqueando que se esten escribiendo en los documentos, lo que sig es que cuando hemos recuperando unas notas por ejm, puede ser que mientas estaba ocurriendo alguien borro esa nota y yo la tenga aunque ya no existe. Entonces esto lo que hace mongoose no es transacional porque no esta bloqueando la escrituras de la tabla entonces mientras sucede la peticio pueden estar sucediendo otras.
+
+!!! JWT !!!.- 
+Una buena practica es siempre cuando nosnostros hacemos la validaciones de password o email, siempre nosotros debemos dar un error generico no ser especificos en que fallo. por ejm si nosotros colocamos mal la password no podemos decir directamente la password fallo si no podemos mandar un error por ejm, Invalid password o email ejm:
+
+1)Debemos crear en el backend nuestra ruta de login con toda su logica ejm
+const bcrypt = require('bcrypt')
+const loginRouter = require('express').Router()
+const User = require('../models/User')
+
+loginRouter.post('/', async (request, response) => {
+  const { body } = request
+  const { username, password } = body
+
+  const user = await User.findOne({ username })
+  const passwordCorrect = user === null
+    ? false
+    : await bcrypt.compare(password, user.passwordHash)
+
+  if (!(user && passwordCorrect)) {
+    response.json({
+      error: 'Invalid username or password'
+    })
+  }
+
+  response.send({
+    name: user.name,
+    username: user.username
+  })
+})
+
+module.exports = loginRouter
+
+2)Usar jwt que es el mas standar para los tokens, que lo que nos permite es que dos partes se comuniquen de una forma segura e intercambiar infor, otra ventaja es que no necesitamos un DB, es totalmente agnostico a donde podamos guardar esa sesion, al final una vez que tenemos guaradad y tenemos esa informacion sin necesidad de persistirla en algun sitio aunque lo podemos hacer, podemos indicar dentro del token el user o informacion que necesitemos codificada y muy dificl falsificarla porque esta firmada digitalmente, viendo graficamente tenemos 3 partes del token 
+
+1.-La prte rojo primera es el header que recibe la informacion sobre el algoritmo y el tipo del token
+2.- La parte del medio que al final seria la informacion que queremos guardar en ese token, lo que guardamos aqui puede ser cualquier cosa pasado en formato json.
+3.-La tercera parte del token, nos yuda averificar que la firma del token es correcta, de hecho esta firma es la firma que decimos que esta firmada digitalmente y depende de un secreto que tengamos en nuestrpo backend, noes facil falsificarla pero no imposible de hackear. Añadiendo una palabra secreta dependera el token.
+ Install
+ npm install jsonwebtoken (de auth0)
+
+Luego debemos de crear la informacion que queremos enviar en json
+ const userForToken = {
+    id: user._id,
+    username: user.username
+  }
+  
+Luego creamos el token.
+  const jwt = require('jsonwebtoken') //Tenemos que requerir elpaquete obviamente.
+
+  creamos el token con el metodo sign, que recibe dos parametros, la informacion que le vamos a enviar al token y queremos que tenga, y como 2 parametro la palabra secrera, que nos servira este para la verifiacion si la firma digital es correct, con esta palabra tambien podemos nosotros decodificar el token. como buena practica lo mas recomendable es siempre tener esta palabra clave en una variable de entorno para que no se pueda ver y porque tambein podemos reutlizar en mas d eun sitio. y en diff entornos podemos tener secretos distintos.
+
+  const token = jwt.sign(userForToken, 'perro') // without environment
+  const token = jwt.sign(userForToken, process.env.SECRET) // with environmet
+
+Luego respondemos enviando el token en la respuesta de la peticion
+  response.send({
+    name: user.name,
+    username: user.username,
+    token
+  })
+Asi cada vex que inicie sesion un usuario correcto devolvera, el name, username y el token opara logearse.
+
+3)Luego debemos usar ese token por lo que podemos hacer en nuestro backend es limitqr las personas que puedan crearlas notas, que sea un usuario que pueda hacer las notas.
+La forma mas correcta de realizar este proceso es permitir que en nuestras endpoints reciba esta informacion atravez de una cabecera http un header. Esta cabecera se llama Authorization, lo haremos atravez del Bearer es el mas utilizado, este es que utiliza justamente estos tokens de acceso que estan basado en OAuth 2.0., este OAuth 2.0 es como un conjunto de reglas para hacer autenticacion de una manera segura. Aunque hay varias aprte del bearer como basic, AWS$ etc etc ejm dentro del controlador de la notas lo vamos ha hacer
+
+
+  controllers/notes.js
+  1)importar el jwt para poder leer el token.
+    const jwt = require('jsonwebtoken')
+  
+  2)Recuperar el token, como dijimos vamos ha hacerlo mediante una cabecera http, no podemos es mala practica recueprar del mismo body por eso accedemos a la cabecera ejm
+    const authorization = request.get('authorization') //Forma en express.
+  
+  3)Luego debemos de realizar un posible error en este caso, estamos convritiendo a minusculas todo, que en esta cabecera empiece algo con bearer y obtenemos con un substring el token si todo ha ido bien.
+  let token = ''
+
+    if (authorization && authorization.toLowerCase().startsWith('bearer')) {
+      token = authorization.substring(7)
+    }
+
+  4)Debemos decodificar el token, para tener acceso a la informacion del mismo
+
+    Aqui vemos que con el verify, estamos verificando el token decodificandolo, le pasamos el token que viene en el header que lo hicimos arriba y como segundo parametro la palbara secreta para poder decodificrlo.
+
+  //Antes de manejar el error en el handlerError
+    let decodedToken = {}
+
+    try {
+      decodedToken = jwt.verify(token, process.env.SECRET)
+    } catch (e) {
+      console.log(e)
+    }
+
+      //Modificado y controlado directo el error en el handlers error si no tenemos que usar un try catch. Usar siempre un handleError para manejo de errores y no nos este dando un error 500 siempre si no saber que error es y como podemos solucionarlo a la larga es una muy buena practica siempre tener esto.
+
+      const decodedToken = jwt.verify(token, process.env.SECRET)
+
+    Luego validamos si esque existe algun error.
+    if (!token || !decodedToken.id) {
+      return response.status(401).json({ error: 'token missing or invalid' })
+    }
+
+Revisar este commit porque realizamos cambios en la peticion post en las notas para poder completar la llamads con el token eliminamos el userId de request.body para poder pasarle el userId pero que ya viene incluido en la decodificacion del token asi funciona y modificamos el error handlerz para evitarnos el try catch en las notas con el token.
+
+Podemos ir mas alla con accesos a tokens fuera de un user agent, talvez en otra ubucacion etc etc asi podmemos mejorar la segurirdad de los tokens.
+LO que podemos y vamos a realizar como ultimo paso es pasarle un parametro en la creacion del token donde le indicamos el tiempo de validex que tiene nuestro token ejm 
+
+const token = jwt.sign(
+  userForToken,
+  process.env.SECRET,
+  { expiresIn: 60 * 60 * 24 * 7} 
+)
+
+y creamos un error dentro de nuestro handler error para controlar, el motivo dek porque fallo si desues de en este caso en 7 dias expira nuestro token, aunque debemos de tener en cuenta que pueden coger el token, no es tan recomendable usar el header en las paginas https en local como en este ejem esta bien usarlo, porque si algun tiene acceso a la red pueden pillarse el token y usarlo a su modo porque la conexion no esta cifrada en nuestro backend.
+
+Como buena practica separamos el authorization y lo del token que hicimos en el notes.js, e hicimos un middleware(userExtractor), pero con una funcoinalidad extra que tiene express, que consiste en guardar cierta informacion en la request, una vez que pasa por un middleware podemos guardar cierta informacion, de esta manera nos ayuda a no tener que sacar cierta informacion de algun otro sitio. revisar el middleware userExtractor  
+const { id: userId } = decodedToken
+  request.userId = userId //Funcoinalida express
+
+  Para usarlo como un middleware podemos nosotros a la rutas pasarle los middlewares que queramos, siendo asi podemos nosotros especificar en una ruta algo especifico, es decir, en este ejm estamos nosotros indicandole a la ruta ... que solo ese path necesita que sea un usuario ejm
+
+  controller/notes.js
+  importamos el middleware
+  const userExtractor = require('..middlewares/userExtractor')
+
+  2.- Usamos el middleware en las rutas que necesitamos como ejm tenemos en post, pero usamos en put y delete
+  notesRouter.post('/', userExtractor, async (request, response, next) => {
+
+    ...code
+
+    const { userId } = request //Con esto estamos recuperando el userId que lo guardamos en la request desde le middleware userExtractor
+    }
+
+    Asi podemos usar el middleware donde lo necesitamos.
